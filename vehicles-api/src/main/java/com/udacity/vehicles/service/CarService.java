@@ -5,7 +5,11 @@ import com.udacity.vehicles.client.prices.PriceClient;
 import com.udacity.vehicles.domain.Location;
 import com.udacity.vehicles.domain.car.Car;
 import com.udacity.vehicles.domain.car.CarRepository;
+
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 
 /**
@@ -31,7 +35,11 @@ public class CarService {
      * @return a list of all vehicles in the CarRepository
      */
     public List<Car> list() {
-        return repository.findAll();
+        return repository.findAll().stream().map(car -> {
+            car.setPrice(priceClient.getPrice(car.getId()));
+            car.setLocation(mapsClient.getAddress(car.getLocation()));
+            return car;
+        }).collect(Collectors.toList());
     }
 
     /**
@@ -62,10 +70,12 @@ public class CarService {
                     .map(carToBeUpdated -> {
                         carToBeUpdated.setDetails(car.getDetails());
                         carToBeUpdated.setLocation(car.getLocation());
+                        carToBeUpdated.setCondition(car.getCondition());
+                        carToBeUpdated.setModifiedAt(LocalDateTime.now());
                         return repository.save(carToBeUpdated);
                     }).orElseThrow(CarNotFoundException::new);
         }
-
+        car.setCreatedAt(LocalDateTime.now());
         return repository.save(car);
     }
 
